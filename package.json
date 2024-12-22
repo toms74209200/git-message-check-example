@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "test": "jest --reporters=default --reporters=github-actions"
+  },
+  "dependencies": {
+    "jest": "^29.7.0"
+  }
+}
