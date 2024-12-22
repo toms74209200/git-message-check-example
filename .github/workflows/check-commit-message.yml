@@ -1,0 +1,42 @@
+name: Check commit message contains 「指摘修正」
+
+on:
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  check-commit-message:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: commit_message
+        name: Check Commit Message
+        run: |
+          echo matches=`git log --format=%B origin/${{ github.base_ref }}..origin/${{ github.head_ref }} -E --grep='(指摘.*修正|レビュー.*修正|指摘.*対応|レビュー.*対応)'` >> $GITHUB_OUTPUT
+      - name: Create PR comment
+        if: steps.commit_message.outputs.matches
+        run: |
+          cat  << EOF > comment.md
+          ## コミットメッセージは具体的に書きましょう
+
+          コミットメッセージに「指摘修正」や「レビュー修正」などの曖昧な表現が含まれています。
+          コミットログは変更履歴の見出しとしての役割を担っているため、より具体的に変更内容について記述すると良いでしょう。
+          またコミットメッセージを簡潔に書くことができないような場合は、コミットを複数に分割することを検討してみてください。
+          例えば、以下のように書き換えることができます。
+
+          - 「マジックナンバーを定数に置き換え」
+          - 「早期リターンを使うように変更」
+          EOF
+      - name: Add PR comment
+        if: steps.commit_message.outputs.matches
+        run: |
+          gh pr comment ${{ github.event.number }} --body-file comment.md
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
